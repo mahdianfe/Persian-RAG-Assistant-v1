@@ -19,3 +19,9 @@ package = false
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
 
+[dependency-groups]
+dev = [
+    "httpx2>=2.10.0",
+    "pytest>=9.1.1",
+]
+
