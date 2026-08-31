@@ -12,12 +12,14 @@ class DocumentService:
     def create(
         db: Session,
         document_data: DocumentCreate,
+        content: str = "",
     ) -> Document:
         """Create a new document."""
 
         document = Document(
             title=document_data.title,
             filename=document_data.filename,
+            content=content,
         )
 
         db.add(document)

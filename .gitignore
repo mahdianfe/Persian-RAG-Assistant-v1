@@ -10,3 +10,16 @@ wheels/
 .venv
 .env
 .env.*
+storage/uploads/
+
+
+
+# PDF test files
+*.pdf
+
+# Debug outputs
+debug_*.txt
+debug_*.png
+
+# Local backups
+backup_*.sql

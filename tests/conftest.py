@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.base import Base
@@ -17,6 +17,11 @@ TEST_DATABASE_URL = (
 @pytest.fixture()
 def db_session() -> Session:
     engine = create_engine(TEST_DATABASE_URL)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("CREATE EXTENSION IF NOT EXISTS vector")
+        )
 
     Base.metadata.create_all(bind=engine)
 
@@ -47,3 +52,4 @@ def client(db_session: Session):
         yield test_client
 
     app.dependency_overrides.clear()
+
