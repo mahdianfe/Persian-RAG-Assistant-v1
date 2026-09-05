@@ -1,4 +1,3 @@
-
 from app.db.session import SessionLocal
 from app.embedding.ollama import OllamaEmbeddingService
 from app.llm.ollama import OllamaLLMService
@@ -8,7 +7,7 @@ from app.services.retrieval import RetrievalService
 
 
 def main() -> None:
-    """Run an end-to-end RAG test."""
+    """Interactive RAG test."""
 
     db = SessionLocal()
 
@@ -25,18 +24,26 @@ def main() -> None:
             llm_service=llm_service,
         )
 
-        question = "این سند درباره چه چیزی صحبت می‌کند؟"
+        print("Interactive RAG test")
+        print("Type 'exit' to quit.")
 
-        print("\n=== Question ===")
-        print(question)
+        while True:
+            question = input("\nQuestion: ").strip()
 
-        answer = rag_service.answer(
-            db,
-            question,
-        )
+            if question.lower() == "exit":
+                break
 
-        print("\n=== Answer ===")
-        print(answer)
+            if not question:
+                print("Question cannot be empty.")
+                continue
+
+            answer = rag_service.answer(
+                db,
+                question,
+            )
+
+            print("\n=== Answer ===")
+            print(answer)
 
     finally:
         db.close()

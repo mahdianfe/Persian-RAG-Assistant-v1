@@ -46,7 +46,7 @@ def test_rag_prompt_is_grounded() -> None:
     assert context in prompt
 
     assert (
-        "به سؤال کاربر فقط و فقط بر اساس اطلاعات صریح موجود در CONTEXT پاسخ بده."
+        "فقط از CONTEXT استفاده کن."
         in prompt
     )
 

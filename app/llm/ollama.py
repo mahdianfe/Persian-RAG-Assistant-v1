@@ -44,7 +44,8 @@ class OllamaLLMService(LLMService):
                 "stream": False,
                 "options": {
                     "temperature": 0.0,
-                    "top_p": 0.8,
+                    "top_p": 0.1,
+                    "repeat_penalty": 1.1,
                 },
             },
             timeout=180.0,

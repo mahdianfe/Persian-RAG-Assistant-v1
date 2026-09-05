@@ -16,7 +16,11 @@ class Settings(BaseSettings):
 
     llm_model: str
 
-    retrieval_similarity_threshold: float = 0.40
+    retrieval_similarity_threshold: float = 0.42
+
+    rag_min_answer_score: float = 0.40
+
+    rag_document_id: int = 8
 
     model_config = SettingsConfigDict(
         env_file=".env",

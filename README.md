@@ -187,7 +187,7 @@ uv run pytest -v
 Current status:
 
 ```
-62 passed
+64 passed
 ```
 
 ---
@@ -244,3 +244,56 @@ are preserved correctly during extraction.
 ## License
 
 MIT License
+
+---
+
+
+## RAG Confidence Thresholds
+
+This project uses two confidence checks before generating answers.
+
+### RETRIEVAL_SIMILARITY_THRESHOLD
+
+Controls which document chunks are allowed to enter the RAG context.
+
+Low similarity chunks are removed before sending information to the LLM.
+
+Example:
+```
+
+Question  
+|  
+Embedding Search  
+|  
+Similarity Filter  
+|  
+Relevant Context
+
+```
+
+Configured in `.env`:
+```
+
+RETRIEVAL_SIMILARITY_THRESHOLD=0.42
+
+```
+
+---
+
+### RAG_MIN_ANSWER_SCORE
+
+A second safety layer after retrieval.
+
+The system checks the best retrieved chunk score before generating an answer.
+
+If confidence is below this value, the system refuses to answer.
+
+Configured in `.env`:
+```
+
+RAG_MIN_ANSWER_SCORE=0.40
+
+```
+
+This prevents hallucinated answers when the document does not contain relevant information.
+

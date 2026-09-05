@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -6,8 +7,9 @@ from app.llm.service import LLMService
 from app.services.context import ContextBuilder
 from app.services.prompt import RAGPrompt
 from app.services.retrieval import RetrievalService
-from app.services.answer_validator import AnswerValidator
 
+
+DOCUMENT_ID = 7
 
 
 class RAGService:
@@ -39,39 +41,35 @@ class RAGService:
         chunks = self.retrieval_service.search(
             db,
             query_embedding,
-            top_k=5,
+            top_k=1,
             similarity_threshold=(
                 settings.retrieval_similarity_threshold
             ),
-            document_id=(
-                settings.rag_document_id
-                if settings.rag_document_id
-                else None
-),
+            document_id=DOCUMENT_ID,
         )
 
         if not chunks:
             return "پاسخ این سؤال در اسناد موجود پیدا نشد."
 
+
         best_score = chunks[0].score
 
-        if best_score < settings.rag_min_answer_score:
+        if best_score < 0.40:
             return "پاسخ این سؤال در اسناد موجود پیدا نشد."
 
         context = self.context_builder.build(chunks)
 
-        if not context.strip():
+        if len(context.strip()) < 50:
             return "پاسخ این سؤال در اسناد موجود پیدا نشد."
 
+
+        if not context.strip():
+            return "پاسخ این سؤال در اسناد موجود پیدا نشد."
 
         prompt = RAGPrompt.build(
             question,
             context,
         )
 
-        answer = self.llm_service.generate(prompt)
+        return self.llm_service.generate(prompt)
 
-        return AnswerValidator.validate(
-            answer,
-            context,
-        )
