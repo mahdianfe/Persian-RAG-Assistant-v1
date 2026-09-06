@@ -1,3 +1,5 @@
+from app.services.extractor import ExtractionService
+
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -39,15 +41,11 @@ class RAGService:
         chunks = self.retrieval_service.search(
             db,
             query_embedding,
-            top_k=5,
+            top_k=20,
             similarity_threshold=(
                 settings.retrieval_similarity_threshold
             ),
-            document_id=(
-                settings.rag_document_id
-                if settings.rag_document_id
-                else None
-),
+            document_id=settings.rag_document_id,
         )
 
         if not chunks:
@@ -69,9 +67,21 @@ class RAGService:
             context,
         )
 
-        answer = self.llm_service.generate(prompt)
+        extracted = ExtractionService.extract_terms(
+            question,
+            context,
+        )
 
-        return AnswerValidator.validate(
+
+        if extracted:
+            return extracted
+
+        answer = self.llm_service.generate(prompt)
+  
+
+        validated_answer = AnswerValidator.validate(
             answer,
             context,
         )
+
+        return validated_answer

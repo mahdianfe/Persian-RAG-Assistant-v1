@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     rag_min_answer_score: float = 0.40
 
-    rag_document_id: int = 8
+    rag_document_id: int | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
