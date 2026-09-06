@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.routes.documents import router as documents_router
+from app.api.routes.rag import router as rag_router
 from app.core.exceptions import DatabaseException
-
 
 app = FastAPI(
     title="Persian RAG Assistant",
@@ -25,4 +25,4 @@ async def database_exception_handler(
 
 
 app.include_router(documents_router)
-
+app.include_router(rag_router)

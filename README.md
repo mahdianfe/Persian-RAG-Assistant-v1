@@ -1,9 +1,8 @@
-
 # Persian RAG Assistant
 
 A Persian Retrieval-Augmented Generation (RAG) system designed for extracting, processing, embedding, retrieving, and answering questions from Persian documents.
 
-The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR text reconstruction, Persian normalization, and semantic retrieval.
+The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR text reconstruction, Persian normalization, semantic retrieval, and grounded question answering.
 
 ---
 
@@ -17,16 +16,18 @@ The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR
 - Vector-based retrieval
 - Embedding pipeline
 - LLM-based answer generation
-- REST API for document management
+- Grounded RAG responses
+- RAG query REST API
+- Document management REST API
+- Confidence-based answer rejection
 - Database migrations with Alembic
-- Automated test suite
+- Automated unit and integration tests
 
 ---
 
 ## Architecture
 
 ```text
-
              PDF Document
                   |
                   v
@@ -48,12 +49,17 @@ The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR
           Vector Retrieval
                   |
                   v
-                LLM
+          Context Builder
                   |
                   v
-          Generated Answer
+        Extraction / LLM
+                  |
+                  v
+         Answer Validation
+                  |
+                  v
+            REST API
 ```
-
 
 ---
 
@@ -80,13 +86,21 @@ The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR
 - Embedding service
 - Vector similarity retrieval
 - Context building
-- Prompt generation
+- Grounded prompt generation
+- Answer validation
+
+### LLM and Embeddings
+
+- Ollama
+- Configurable embedding model
+- Configurable LLM model
 
 ### Testing
 
 - Pytest
 - Unit tests
 - Integration tests
+- API tests
 
 ---
 
@@ -94,49 +108,57 @@ The project focuses on reliable Persian PDF processing, especially mixed RTL/LTR
 
 One of the main challenges in Persian RAG systems is preserving the correct text order.
 
-PDF extraction often returns Persian text in visual order instead of logical reading order.
+PDF extraction may return Persian and English text in visual or mixed content-stream order. This project implements custom reconstruction logic for Persian documents containing both RTL and LTR content.
 
-This project implements:
+The PDF pipeline includes:
 
 - Character-level geometry analysis
 - RTL ordering correction
 - LTR token preservation
 - Mixed Persian-English sentence reconstruction
+- Persian presentation-form normalization
+- Word-spacing reconstruction
 
 Example:
 
-Original PDF:
+```text
 این سند برای آزمایش سیستم RAG ساخته شده است.
+```
 
+Mixed English terms such as the following are preserved:
 
-
-Extracted correctly as:
-این سند برای آزمایش سیستم RAG ساخته شده است
-
+```text
+Python
+RAG
+PDF
+scikit-learn
+k-means
+```
 
 ---
 
 ## Project Structure
-```text
 
-app/  
-├── api/  
-├── core/  
-├── db/  
-├── embedding/  
-├── llm/  
-├── models/  
-├── schemas/  
+```text
+app/
+├── api/
+│   └── routes/
+├── core/
+├── db/
+├── embedding/
+├── llm/
+├── models/
+├── schemas/
 └── services/
 
-alembic/  
+alembic/
 └── versions/
 
-scripts/  
+scripts/
 └── utility scripts
 
-tests/  
-├── unit/  
+tests/
+├── unit/
 └── integration/
 ```
 
@@ -148,13 +170,12 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/mahdianfe/Persian-RAG-Assistant-v1.git
-
 cd Persian-RAG-Assistant-v1
 ```
 
 Install dependencies:
 
-```
+```bash
 uv sync
 ```
 
@@ -162,15 +183,15 @@ uv sync
 
 ## Database Setup
 
-Run services:
+Run the required services:
 
-```
+```bash
 docker compose up -d
 ```
 
-Apply migrations:
+Apply database migrations:
 
-```
+```bash
 uv run alembic upgrade head
 ```
 
@@ -178,17 +199,19 @@ uv run alembic upgrade head
 
 ## Running Tests
 
-Run complete test suite:
+Run the complete test suite:
 
-```
+```bash
 uv run pytest -v
 ```
 
-Current status:
+Latest verified full-suite status:
 
+```text
+68 passed
 ```
-64 passed
-```
+
+A dedicated RAG API test has also been added and passes independently.
 
 ---
 
@@ -196,104 +219,164 @@ Current status:
 
 Start FastAPI:
 
-```
+```bash
 uv run uvicorn app.main:app --reload
 ```
 
-API documentation:
+API documentation is available at:
 
-```
+```text
 http://localhost:8000/docs
 ```
 
 ---
 
+## RAG Query API
+
+The RAG endpoint allows clients to ask questions about the indexed Persian documents.
+
+### Endpoint
+
+```http
+POST /rag/query
+```
+
+### Example Request
+
+```bash
+curl -X POST "http://127.0.0.1:8000/rag/query" \
+-H "Content-Type: application/json" \
+-d '{"question":"چه الگوریتم‌هایی در متن نام برده شده‌اند؟"}'
+```
+
+### Example Response
+
+```json
+{
+  "answer": "Regression\nClassification\nk-means\nClustering"
+}
+```
+
+For a question whose answer is not supported by the retrieved documents:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/rag/query" \
+-H "Content-Type: application/json" \
+-d '{"question":"پایتخت فرانسه چیست؟"}'
+```
+
+Example response:
+
+```json
+{
+  "answer": "پاسخ این سؤال در اسناد موجود پیدا نشد."
+}
+```
+
+---
+
+## Document API
+
+The application also provides REST endpoints for document management and PDF upload.
+
+Main document endpoints include:
+
+```text
+POST   /documents
+POST   /documents/upload
+GET    /documents
+GET    /documents/{document_id}
+PATCH  /documents/{document_id}
+DELETE /documents/{document_id}
+```
+
+Uploaded PDFs are extracted, cleaned, chunked, and stored for later retrieval.
+
+---
+
+## RAG Confidence Thresholds
+
+The project uses confidence checks before generating an answer.
+
+### RETRIEVAL_SIMILARITY_THRESHOLD
+
+Controls which retrieved chunks are allowed to enter the RAG context.
+
+Low-similarity chunks are discarded before context construction.
+
+Configured through the application settings:
+
+```text
+RETRIEVAL_SIMILARITY_THRESHOLD=0.42
+```
+
+Conceptually:
+
+```text
+Question
+   |
+   v
+Embedding Search
+   |
+   v
+Similarity Filter
+   |
+   v
+Relevant Context
+```
+
+### RAG_MIN_ANSWER_SCORE
+
+A second confidence check evaluates the best retrieved chunk before answer generation.
+
+If the score is below the configured threshold, the system refuses to answer.
+
+```text
+RAG_MIN_ANSWER_SCORE=0.40
+```
+
+This reduces unsupported answers when relevant document context cannot be retrieved.
+
+---
+
 ## Development Notes
 
-The PDF reconstruction module was tested on Persian documents containing:
+The PDF reconstruction pipeline has been tested on documents containing:
 
 - Persian sentences
 - English technical terms
 - Mixed RTL/LTR content
-- Presentation form characters
+- Arabic/Persian presentation-form characters
+- Numbers
+- Hyphenated English tokens
+- Geometric word spacing
 
-Examples:
+The RAG pipeline has also been tested for:
 
-```
-Python
-RAG
-PDF
-scikit-learn
-```
-
-are preserved correctly during extraction.
+- Semantic retrieval
+- Similarity thresholds
+- Document filtering
+- Context construction
+- Grounded prompts
+- Out-of-document questions
+- Term extraction
+- REST API queries
 
 ---
 
 ## Future Improvements
 
-- Better multilingual embedding models
-- Streaming LLM responses
+- Generalize structured term extraction beyond fixed test vocabulary
 - Advanced reranking
-- Document metadata filtering
+- Better document and chunk metadata
+- Page-level citation support
 - OCR support for scanned PDFs
+- Streaming LLM responses
 - Web-based user interface
+- Retrieval evaluation on a larger Persian benchmark
 
 ---
 
 ## License
 
 MIT License
-
----
-
-
-## RAG Confidence Thresholds
-
-This project uses two confidence checks before generating answers.
-
-### RETRIEVAL_SIMILARITY_THRESHOLD
-
-Controls which document chunks are allowed to enter the RAG context.
-
-Low similarity chunks are removed before sending information to the LLM.
-
-Example:
-```
-
-Question  
-|  
-Embedding Search  
-|  
-Similarity Filter  
-|  
-Relevant Context
-
-```
-
-Configured in `.env`:
-```
-
-RETRIEVAL_SIMILARITY_THRESHOLD=0.42
-
-```
-
----
-
-### RAG_MIN_ANSWER_SCORE
-
-A second safety layer after retrieval.
-
-The system checks the best retrieved chunk score before generating an answer.
-
-If confidence is below this value, the system refuses to answer.
-
-Configured in `.env`:
-```
-
-RAG_MIN_ANSWER_SCORE=0.40
-
-```
-
-This prevents hallucinated answers when the document does not contain relevant information.
-
