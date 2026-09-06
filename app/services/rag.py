@@ -1,15 +1,14 @@
-from app.services.extractor import ExtractionService
 
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.embedding.service import EmbeddingService
 from app.llm.service import LLMService
+from app.services.answer_validator import AnswerValidator
 from app.services.context import ContextBuilder
+from app.services.extractor import ExtractionService
 from app.services.prompt import RAGPrompt
 from app.services.retrieval import RetrievalService
-from app.services.answer_validator import AnswerValidator
-
 
 
 class RAGService:
@@ -61,7 +60,6 @@ class RAGService:
         if not context.strip():
             return "پاسخ این سؤال در اسناد موجود پیدا نشد."
 
-
         prompt = RAGPrompt.build(
             question,
             context,
@@ -71,7 +69,6 @@ class RAGService:
             question,
             context,
         )
-
 
         if extracted:
             return extracted
