@@ -4,6 +4,7 @@ import pymupdf
 
 from app.services.pdf_parser import PDFParser
 from app.services.pdf_reconstruction import PDFReconstructionService
+from app.services.text import TextCleaningService
 from app.services.text_normalizer import PDFTextNormalizer
 
 
@@ -35,15 +36,28 @@ class PDFService:
                     if text:
                         page_lines.append(text)
 
+
             page_text = "\n".join(
                 page_lines,
+            )
+
+            page_text = TextCleaningService.clean(
+                PDFTextNormalizer.normalize(
+                    page_text,
+                )
             )
 
             if page_text.strip():
                 pages.append(
                     f"--- PAGE {page.page_number} ---\n"
-                    f"{page_text.strip()}"
+                    f"{page_text}"
                 )
+
+
+        normalized_text = PDFTextNormalizer.normalize(
+            "\n\n".join(pages),
+        )
+
 
         return PDFTextNormalizer.normalize(
             "\n\n".join(pages),

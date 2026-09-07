@@ -193,3 +193,27 @@ def test_section_aware_chunking() -> None:
     assert "۳ .۲ تعریف یادگیری ماشین" in chunks[2]
     assert "از نمونه ها الگو می آموزد" in chunks[2]
 
+def test_text_cleaning_removes_pdf_page_counter() -> None:
+    text = """
+جزوه مقدماتی یادگیری ماشین
+1 / 1
+مقدمه
+یادگیری ماشین چیست؟
+"""
+
+    result = TextCleaningService.clean(text)
+
+    assert "1 / 1" not in result
+
+def test_text_cleaning_removes_pdf_filename() -> None:
+    text = (
+        "persian-rag-test-02.pdf\n"
+        "جزوه مقدماتی یادگیری ماشین\n"
+        "این متن درباره یادگیری ماشین است."
+    )
+
+    result = TextCleaningService.clean(text)
+
+    assert "persian-rag-test-02" not in result
+    assert ".pdf" not in result
+    assert "این متن درباره یادگیری ماشین است." in result

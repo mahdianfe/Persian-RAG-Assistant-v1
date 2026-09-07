@@ -17,6 +17,14 @@ class TextCleaningService:
         # Normalize Unicode characters produced by PDF extraction.
         text = unicodedata.normalize("NFKC", text)
 
+        # Remove PDF filenames extracted as visible text.
+        text = re.sub(
+            r"\b[\w\-]+\.pdf\b",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
+
         # Preserve word boundaries in Persian compounds.
         text = re.sub(r"\u200c+", " ", text)
 
@@ -141,6 +149,14 @@ class TextCleaningService:
                 line,
             ):
                 continue
+
+            # Remove page-number-only lines.
+            if re.fullmatch(
+                r"(?:[0-9۰-۹]+|\d+\s*/\s*\d+)",
+                line,
+            ):
+                continue
+
 
             # Keep one document title, remove repeated headers.
             if line == TextCleaningService.DOCUMENT_TITLE:

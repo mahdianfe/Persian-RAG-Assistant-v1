@@ -170,3 +170,84 @@ def test_reconstruct_line_keeps_embedded_english_word() -> None:
     )
 
     assert result == "مدل scikit-learn"
+
+def test_reconstruct_line_keeps_english_word_at_end_of_persian_sentence() -> None:
+    line = PDFLine(
+        characters=[
+            make_character("R", 10, 15),
+            make_character("e", 15, 20),
+            make_character("g", 20, 25),
+            make_character("r", 25, 30),
+            make_character("e", 30, 35),
+            make_character("s", 35, 40),
+            make_character("s", 40, 45),
+            make_character("i", 45, 50),
+            make_character("o", 50, 55),
+            make_character("n", 55, 60),
+
+            make_character(" ", 60, 65),
+
+            make_character("ا", 90, 95),
+            make_character("س", 85, 90),
+            make_character("ت", 80, 85),
+        ]
+    )
+
+    result = PDFReconstructionService.reconstruct_line(
+        line,
+    )
+
+    assert result == "Regression است"
+
+def test_reconstruct_line_preserves_pdf_logical_order_for_english_prefix() -> None:
+    line = PDFLine(
+        characters=[
+            make_character("R", 10, 15),
+            make_character("e", 15, 20),
+            make_character("g", 20, 25),
+            make_character("r", 25, 30),
+            make_character("e", 30, 35),
+            make_character("s", 35, 40),
+            make_character("s", 40, 45),
+            make_character("i", 45, 50),
+            make_character("o", 50, 55),
+            make_character("n", 55, 60),
+
+            make_character(" ", 60, 65),
+
+            make_character("ب", 90, 95),
+            make_character("ر", 85, 90),
+
+        ]
+    )
+
+    result = PDFReconstructionService.reconstruct_line(
+        line,
+    )
+
+    assert result == "Regression بر"
+
+
+def test_reconstruct_line_preserves_persian_sentence_with_english_terms() -> None:
+    line = PDFLine(
+        characters=[
+            make_character("P", 10, 15),
+            make_character("D", 15, 20),
+            make_character("F", 20, 25),
+
+            make_character(" ", 25, 30),
+
+            make_character("د", 60, 65),
+            make_character("ر", 55, 60),
+            make_character(" ", 50, 55),
+            make_character("م", 45, 50),
+            make_character("ت", 40, 45),
+            make_character("ن", 35, 40),
+        ]
+    )
+
+    result = PDFReconstructionService.reconstruct_line(
+        line,
+    )
+
+    assert result == "در متن PDF"

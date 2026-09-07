@@ -35,6 +35,8 @@ class PDFReconstructionService:
             characters,
         )
 
+        print("BEFORE NORMALIZE:", repr(text))
+
         return PDFTextNormalizer.normalize(
             text,
         )
@@ -219,13 +221,6 @@ class PDFReconstructionService:
     ) -> list[list[PDFCharacter]]:
         """
         Convert visual run placement to logical run order.
-
-        The direction of the rightmost meaningful run is used as the
-        base direction of the line.
-
-        This is more reliable for Persian mixed-direction PDF lines
-        than using the first character returned by the PDF stream,
-        because that stream can begin with the visually leftmost run.
         """
 
         if len(runs) < 2:
@@ -236,6 +231,33 @@ class PDFReconstructionService:
         )
 
         if base_direction == "rtl":
+
+            first_run_direction = cls._run_direction(
+                runs[0],
+            )
+
+            if first_run_direction == "ltr":
+
+                first_run_text = "".join(
+                    character.text
+                    for character in runs[0]
+                ).strip()
+
+                # Short English tokens inside Persian sentences
+                # should move to the end.
+                if len(first_run_text) <= 6:
+                    return sorted(
+                        runs,
+                        key=cls._run_center_x,
+                        reverse=True,
+                    )
+
+                # Longer English prefixes stay at the beginning.
+                return sorted(
+                    runs,
+                    key=cls._run_center_x,
+                )
+
             return sorted(
                 runs,
                 key=cls._run_center_x,
@@ -249,6 +271,7 @@ class PDFReconstructionService:
             )
 
         return list(runs)
+
 
     @classmethod
     def _detect_base_direction(
