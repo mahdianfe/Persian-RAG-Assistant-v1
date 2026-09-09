@@ -23,6 +23,7 @@ from app.services.document import DocumentService
 from app.services.document_chunk import DocumentChunkService
 from app.services.pdf import PDFService
 from app.services.text import TextCleaningService
+from app.services.embedding import DocumentChunkEmbeddingService
 
 
 router = APIRouter(
@@ -126,6 +127,7 @@ async def upload_document(
                 document.id,
                 chunks,
             )
+        DocumentChunkEmbeddingService().embed_pending_chunks(db)
 
         return document
 
