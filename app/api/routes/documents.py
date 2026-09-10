@@ -18,13 +18,8 @@ from app.schemas.document import (
     DocumentResponse,
     DocumentUpdate,
 )
-from app.services.chunking import TextChunkingService
 from app.services.document import DocumentService
-from app.services.document_chunk import DocumentChunkService
-from app.services.pdf import PDFService
-from app.services.text import TextCleaningService
-from app.services.embedding import DocumentChunkEmbeddingService
-
+from app.services.ingestion import DocumentIngestionService
 
 router = APIRouter(
     prefix="/documents",
@@ -91,43 +86,13 @@ async def upload_document(
 
         file_path.write_bytes(file_content)
 
-        extracted_text = PDFService.extract_text(file_path)
-
-        cleaned_text = TextCleaningService.clean(extracted_text)
-
-        if not cleaned_text:
-            file_path.unlink(missing_ok=True)
-
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="No usable text was found in the PDF.",
-            )
-
-        chunking_service = TextChunkingService(
-            chunk_size=1000,
-            chunk_overlap=200,
-        )
-
-        chunks = chunking_service.split(cleaned_text)
-
-        document_data = DocumentCreate(
-            title=Path(file.filename).stem,
-            filename=file.filename,
-        )
 
         with transaction(db):
-            document = DocumentService.create(
+            document = DocumentIngestionService().ingest(
                 db,
-                document_data,
-                content=cleaned_text,
+                file_path,
+                file.filename,
             )
-
-            DocumentChunkService.create_many(
-                db,
-                document.id,
-                chunks,
-            )
-        DocumentChunkEmbeddingService().embed_pending_chunks(db)
 
         return document
 
